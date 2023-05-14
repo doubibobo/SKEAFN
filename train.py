@@ -3,7 +3,6 @@ import shutil
 import time
 
 import numpy as np
-import optuna
 import torch
 
 from torch.cuda.amp import autocast, GradScaler
@@ -61,7 +60,7 @@ class TrainProcess:
         self.best_accuracy = 0
         self.best_loss = 1e8
 
-    def train_process(self, max_epoch, wait_epoch, iteration, trail):
+    def train_process(self, max_epoch, wait_epoch, iteration):
         start_time = time.time()
         train_step = iteration
         
@@ -142,18 +141,7 @@ class TrainProcess:
                 time_consuming = time.time() - start_time
                 self.logger.info("Time consume for traing: {} mins; {} hours\n". format(time_consuming / 60, time_consuming / 3600))
                 break
-
-            trail.report(valid_metrics[self.args.core_metrics], self.epoch)
-
-            if trail.should_prune():
-                self.summary.close()
-                self.logger.info("Summary writer close!")
-                # 自动删除剪枝时时的模型和日志
-                shutil.rmtree(self.checkpoint_log_dir)
-                raise optuna.exceptions.TrialPruned()
-
             self.epoch += 1
-            # break
 
     def valid_process(self):
         self.model.eval()

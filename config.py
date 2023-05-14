@@ -111,29 +111,17 @@ class Config:
             },
         }
 
-    def __train_config_params(self, trial):
+    def __train_config_params(self):
         text_lr = 5e-5
         text_wd = 1e-3
-        visual_lr = trial.suggest_float("visual_lr", 1e-4, 1e-3, step=1e-4)
-        visual_wd = trial.suggest_float("visual_wd", 1e-3, 1e-2, step=1e-3)
-        acoustic_lr = trial.suggest_float("acoustic_lr", 1e-3, 1e-2, step=1e-3)
-        acoustic_wd = trial.suggest_float("acoustic_wd", 1e-3, 1e-2, step=1e-3)
-        kb_lr = trial.suggest_float("kb_lr", 1e-3, 1e-2, step=1e-3)
-        kb_wd = trial.suggest_float("kb_wd", 1e-3, 1e-2, step=1e-3)
-        other_lr = trial.suggest_float("other_lr", 1e-3, 1e-2, step=1e-3)
-        other_wd = trial.suggest_float("other_wd", 1e-3, 5e-3, step=1e-3)
-
-        # for pre-trained bert model
-        # transformer_layers = 2 # roberta: 2
-        # visual_lr, visual_wd = 3e-4, 1e-3 # roberta: 2e-4, 4e-3
-        # acoustic_lr, acoustic_wd = 3e-3, 4e-3  # 6e-3, 6e-3
-        # kb_lr, kb_wd = 9e-3, 1e-2 # 2e-3, 9e-3
-        # other_lr, other_wd = 1e-3, 1e-3 # 1e-2, 2e-3
-
-        # visual_lr, visual_wd = 7e-4, 5e-3  # roberta: 2e-4, 4e-3
-        # acoustic_lr, acoustic_wd = 2e-3, 1e-2  # 6e-3, 6e-3
-        # kb_lr, kb_wd = 1e-2, 5e-3  # 2e-3, 9e-3
-        # other_lr, other_wd = 8e-3, 2e-3  # 1e-2, 2e-3
+        visual_lr = 0.0009
+        visual_wd = 0.003
+        acoustic_lr = 0.002
+        acoustic_wd = 0.007
+        kb_lr = 0.008
+        kb_wd = 0.01
+        other_lr = 0.001
+        other_wd = 0.003
 
         batch_size = 64
         
@@ -169,9 +157,7 @@ class Config:
             },
         }
 
-    def __model_config_params(self, trail):
-        # transformer_layers = trail.suggest_int("transformer_layers", 1, 4)
-        # feature_droprate = trial.suggest_float("feature_droprate", 1e-1, 5e-1)
+    def __model_config_params(self):
         transformer_layers = 2  # roberta: 2
         feature_droprate = 0.1
         return {
@@ -270,9 +256,9 @@ class Config:
             }
         }
     
-    def get_config(self, trial):
+    def get_config(self):
         return Storage(dict(
                 self.global_params,
-                **self.__model_config_params(trial),
-                **self.__train_config_params(trial)["train_config"],
+                **self.__model_config_params(),
+                **self.__train_config_params()["train_config"],
                 **self.__dataset_config_params()[self.global_params["dataset_name"]]))

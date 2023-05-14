@@ -50,7 +50,6 @@ pip install -r requirements.txt
 + dataset_name: dataset name, support twitter mosi mosei, default is `mosi`.
 + net_type: model name, default is `SKEAFN`.
 + category_number: dim of the model outputs, default is `2`.
-+ optimize_times: optimize times for optuna, default is `100`.
 + num_workers: num workers of loading data, default is `2`.
 + checkpoint_log_path: path to save model and tensorboard log, default is `checkpoints`.
 + res_save_path: path to save results, default is `results`.
@@ -61,7 +60,7 @@ pip install -r requirements.txt
 
 ### 3.3 Training
 ```
-nohup python main.py --dataset_name=twitter --category_number=2 --pretrained_arch=roberta  --optimize_times=200 --num_workers=2 > logs/twitter_roberta_train.log 2>&1 &
+nohup python main.py --dataset_name=twitter --category_number=2 --pretrained_arch=roberta --num_workers=2 > logs/twitter_roberta_train.log 2>&1 &
 ```
 ### 3.4 Testing
 ```

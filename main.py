@@ -2,12 +2,9 @@ import json
 import os
 import sys
 import time
-import traceback
 
 import argparse
-import optuna
 import torch
-from optuna.trial import TrialState
 
 import logging
 logging.basicConfig(
@@ -34,9 +31,9 @@ results_number = 0      # 实验结果数量
 result_list_path = ''   # 所有实验结果的路径
 
 
-def objective(trail):
+def objective():
     # 设置系列参数
-    global_args = Config(parse_args()).get_config(trail)
+    global_args = Config(parse_args()).get_config()
     global_args.checkpoint_log_path = os.path.join(global_args.work_dir, global_args.checkpoint_log_path)
     global_args.res_save_path = os.path.join(global_args.work_dir, global_args.res_save_path)
 
@@ -54,7 +51,7 @@ def objective(trail):
     with open(os.path.join(global_args.checkpoint_log_path, "args_file.json"), "w+") as file:
         json.dump(global_args, fp=file, indent=4)
     
-    test_metrics = do_train(global_args, trail)
+    test_metrics = do_train(global_args)
     
     global results_number     
     results_number += 1
@@ -65,15 +62,15 @@ def objective(trail):
         "metrics": test_metrics,
         "params": global_args,
     }
-    trail_result_path = os.path.join(global_args.res_save_path, "performance_{}.json".format(results_number))
-    with open(trail_result_path, "w+") as file:
+    result_path = os.path.join(global_args.res_save_path, "performance_{}.json".format(results_number))
+    with open(result_path, "w+") as file:
         json.dump(results_to_save, fp=file, indent=4)
-    logger.info("Experiment results are save to {}.\n".format(trail_result_path))    
+    logger.info("Experiment results are save to {}.\n".format(result_path))    
 
     return test_metrics[global_args.core_metrics]
 
 
-def do_train(args, trail):
+def do_train(args):
     using_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if using_cuda else "cpu")
     train_dataloader, valid_dataloader, test_dataloader = get_dataloader(args)
@@ -151,10 +148,8 @@ def do_train(args, trail):
             max_epoch=args.max_epoch,
             wait_epoch=args.early_stop,
             iteration=0,
-            trail=trail,
         )
-    test_metrics = train_process.test_process(
-        args.test_pretrained_path)
+    test_metrics = train_process.test_process(args.test_pretrained_path)
     return test_metrics
 
 
@@ -164,7 +159,6 @@ def parse_args():
     parser.add_argument("--dataset_name", type=str, default="mosi",help="support twitter mosi mosei.")
     parser.add_argument("--net_type", type=str, default="SKEAFN",help="support SKEAFN")
     parser.add_argument("--category_number", type=int, default=1, help="the categories of the input data.")
-    parser.add_argument("--optimize_times", type=int, default=100, help="optimize times for optuna.")
     parser.add_argument("--num_workers", type=int, default=2, help="num workers of loading data.")
     parser.add_argument("--checkpoint_log_path", type=str, default="checkpoints", help="path to save model and tensorboard log.")
     parser.add_argument("--res_save_path", type=str, default="results", help="path to save results.")
@@ -173,7 +167,7 @@ def parse_args():
     parser.add_argument("--pretrained_path", type=str, default="pretrained_models")
     parser.add_argument("--test_pretrained_path", type=str, default=None, help="default mode for train or test.")
     parser.add_argument("--is_seed_valid", action='store_true', help="determine whether is seed validation.")
-    parser.add_argument("--optuna_direction_max", action='store_true', help="optuna direction is max.")
+    parser.add_argument("--direction_max", action='store_true', help="train direction is max.")
     parser.add_argument("--pretrained_arch", type=str, default="bert")
     parser.add_argument("--with_text", action='store_false', help="")
     parser.add_argument("--with_acoustic", action='store_false', help="")
@@ -184,43 +178,16 @@ def parse_args():
 
 if __name__ == "__main__":
     parser_args = parse_args()
-    try:
-        optuna_direction_max = parser_args.optuna_direction_max
-        logger.info("Optimization direction: {}".format("maximize" if optuna_direction_max else "minimize"))
+    direction_max = parser_args.direction_max
+    logger.info("Optimization direction: {}".format("maximize" if direction_max else "minimize"))
+    
+    objective()
 
-        if parser_args.is_seed_valid:
-            parser_args.optimize_times = 1
-        
-        study = optuna.create_study(
-            direction="maximize" if optuna_direction_max else "minimize", 
-            study_name="{}-{}-{}".format(parser_args.dataset_name, parser_args.net_type, time.strftime("%Y-%m-%d=%H-%M-%S")),
-            storage='sqlite:///db.sqlite3',
-        )
-        study.optimize(objective, n_trials=parser_args.optimize_times)
-        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-        
-        logger.info("Study statistics: ")
-        logger.info("Number of finished trials: {}".format(len(study.trials)))
-        logger.info("Number of pruned trials: {}".format(len(pruned_trials)))
-        logger.info("Number of complete trials: {}".format(len(complete_trials)))
-
-        logger.info("Best trial:")
-        trial = study.best_trial
-
-        logger.info("Value: {}".format(trial.value))
-        logger.info("Params: ")
-        for key, value in trial.params.items():
-            logger.info("{}: {}".format(key, value))
-    except Exception as e:
-        logger.info("Study trails are not finished, some errors occurred!")
-        traceback.print_exc()
-    finally:
-        write_json_result_to_csv(
-            json_dir=result_list_path,
-            csv_output=os.path.join(result_list_path, "result_list.csv")
-        )
-        write_single_json_to_whole(
-            json_dir=result_list_path,
-            json_output=os.path.join(result_list_path, "result_list.json")
-        )
+    write_json_result_to_csv(
+        json_dir=result_list_path,
+        csv_output=os.path.join(result_list_path, "result_list.csv")
+    )
+    write_single_json_to_whole(
+        json_dir=result_list_path,
+        json_output=os.path.join(result_list_path, "result_list.json")
+    )
