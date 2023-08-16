@@ -68,4 +68,17 @@ nohup python main.py --dataset_name=twitter --test_pretrained_path=best_model.pt
 ```
 
 ## 5 Cite
-```todo```
+```
+@article{ZHU2023101958,
+  title = {SKEAFN: Sentiment Knowledge Enhanced Attention Fusion Network for multimodal sentiment analysis},
+  journal = {Information Fusion},
+  volume = {100},
+  pages = {101958},
+  year = {2023},
+  issn = {1566-2535},
+  doi = {https://doi.org/10.1016/j.inffus.2023.101958},
+  url = {https://www.sciencedirect.com/science/article/pii/S1566253523002749},
+  author = {Chuanbo Zhu and Min Chen and Sheng Zhang and Chao Sun and Han Liang and Yifan Liu and Jincai Chen},
+  keywords = {Multi-view learning, Multiple feature fusion, Multimodal sentiment analysis, External knowledge, Multi-head attention},
+}
+```
